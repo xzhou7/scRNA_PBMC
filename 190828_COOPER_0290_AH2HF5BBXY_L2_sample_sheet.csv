@@ -1,0 +1,15 @@
+[Header],,
+IEMFileVersion,4,
+[Reads],,
+8,,
+101,,
+[Settings],,
+[Data],,
+Lane,Sample_ID,Index
+2,RH01-1,SI-GA-C7
+2,RH02,SI-GA-C8
+2,RH03,SI-GA-D2
+2,RH04-1,SI-GA-D12
+2,RH04-2,SI-GA-E1
+2,RH04-3,SI-GA-E2
+2,RH04-4,SI-GA-E3
