@@ -4,7 +4,7 @@
 #work under new parameters
 
 #Author: Xin Zhou, Ph.D. 
-#Last Update: Sep.16 2020
+#Last Update: March.28 2023
 
 library(Seurat)
 library(dplyr)
@@ -26,7 +26,7 @@ library(DOSE)
 library(robustSingleCell)
 library(ReactomePA)
 
-setwd("~/Box/XinZhouFiles/Projects/ZXP1_PAH/PBMC/Alternative Analysis (loose cutoff)/")
+setwd("~/Library/CloudStorage/Box-Box/XinZhouFiles/Projects/ZXP1_PAH/PBMC/Alternative Analysis (loose cutoff)/")
 
 load("./PBMC.inte.final.RData")
 
@@ -50,6 +50,7 @@ DimPlot(pbmc.integrated, label = T)
 table(pbmc.integrated$celltype2)
 
 umap <- as.data.frame(pbmc.integrated@reductions[["umap"]]@cell.embeddings)
+umap
 
 rownames(umap[umap$UMAP_2< (-8),])
 
@@ -68,11 +69,48 @@ pbmc.integrated$celltype3 <- factor(pbmc.integrated$celltype3, levels = c("CD4_T
                                                                           "Monocytes","pDC","NK"))
 
 Idents(pbmc.integrated) <- "celltype3"
+
 pumap3 <- DimPlot(pbmc.integrated, label = T, pt.size = 0.005) + scale_color_d3()
 pumap3
-ggsave2(filename = "./UMAP3.whole.pdf",pumap3, width = 6, height = 5, dpi=300)
+
+#ggsave2(filename = "./UMAP3.whole.pdf",pumap3, width = 6, height = 5, dpi=300)
 
 table(Idents(pbmc.integrated))
+
+Idents(pbmc.integrated) <- "celltype"
+table(pbmc.integrated$celltype)
+
+pumap1 <- DimPlot(pbmc.integrated, label = T, pt.size = 0.005) + NoLegend() + coord_fixed()
+pumap1
+ggsave2("./UMAP1.pdf", pumap1, width = 6, height = 5, dpi=300)
+
+markers.to.plot <- c("CD3D","CD4","GPR183","FOXP3", "CD14","S100A9","FCGR3A", "HLA-DRA", "SELL","CD8A", "GNLY", "NKG7", "CCL5", 
+                      "MS4A1", "CD79A", "VMO1", "S100A4", "HLA-DQA1","TSPAN13", "IL3RA", "PPBP", "GNG11")
+
+DefaultAssay(pbmc.integrated) <- "integrated"
+
+#subset(pbmc.integrated, idents = c( "X25_CD8_UK", "X26_B_UK", "X18_CD4_UNK"), invert = T) %>%
+
+pbmc.integrated$celltype_order <- pbmc.integrated$celltype
+
+pbmc.integrated$celltype_order <- factor(pbmc.integrated$celltype_order, levels = c("X0_CD4_1" , "X13_CD4_FOXP3", "X2_CD4_2", "X3_CD4_3", "X5_CD4_4", "X6_CD4_5",     
+                                                                                           "X1_CD14Mono", "X12_CD14Mono_InterM","X16_CD16MONO"  ,"X19_cDC" ,  "X24_CD14Mono_PPBP",  
+                                                                                           "X10_CD8_1", "X14_CD4CD8", "X17_CD8_RORC", "X4_NaiveCD8",             
+                                                                                           "X11_B2", "X8_B1", 
+                                                                                           "X15_NK2", "X20_NK2", "X7_D8_NKT?","X9_NK1", 
+                                                                                           "X22_pDC",   
+                                                                                           "X18_CD4_UNK", "X23_CD4_UNK2","X25_CD8_UK", "X26_B_UK"))
+Idents(pbmc.integrated) <- "celltype_order"
+
+pbmc.clean <- subset(pbmc.integrated, idents = c("X18_CD4_UNK", "X23_CD4_UNK2","X25_CD8_UK", "X26_B_UK"), invert = TRUE)
+table(pbmc.clean$condition)
+
+Dot_marker <- DotPlot(pbmc.clean,features = markers.to.plot) & theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+Dot_marker
+
+ggsave2(filename = "./Dot.Markers.pdf",Dot_marker, width = 8, height = 4.5, dpi = 300)
+
+table(pbmc.integrated$condition)
 
 #######################################################
 table(pbmc.integrated$condition)
@@ -81,13 +119,18 @@ Idents(pbmc.integrated) <- "condition"
 
 pbmc.integrated.control <- subset(pbmc.integrated, idents="CONT", downsample = 14030)
 
-pbmc.even <- subset(pbmc.integrated, cells=c(colnames(pbmc.integrated.control), colnames(subset(pbmc.integrated, idents="PAH"))))
+pbmc.even <- subset(pbmc.clean, cells=c(colnames(pbmc.integrated.control), colnames(subset(pbmc.integrated, idents="PAH"))))
 pbmc.even$celltype3 <- factor(pbmc.even$celltype3, levels = c("CD4_T","CD8_T","cDC","B","Monocytes","pDC","NK"))
 table(pbmc.even$condition)
 
-pcp <- DimPlot(pbmc.even) + scale_color_npg()
+pcp <- DimPlot(pbmc.even) + scale_color_npg() + coord_fixed()
 pcp
 #ggsave2(filename = "./UMAP4.cvsp.pdf",pcp, width = 6, height = 5, dpi=300)
+
+p.percent <- table(pbmc.even$celltype_order, pbmc.even$condition) %>% data.frame() %>% filter(Freq != 0) %>% ggplot(aes(x=Var1, y=Freq, fill=Var2)) + geom_bar(position="dodge", stat="identity")
+p.percent <- p.percent +  theme_cowplot() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+p.percent
+ggsave("./celltype.by.conditions.pdf", p.percent, width = 7, height = 4, dpi = 300)
 
 pumap.cp <- DimPlot(pbmc.even, label = T) #+ scale_color_d3() , group.by = "condition",split.by = "condition"
 pumap.cp
